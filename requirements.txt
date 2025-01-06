@@ -5,3 +5,4 @@ streamlit==1.40.2
 typing_extensions==4.12.2
 plotly==5.24.1
 numpy==1.26.4
+httpx

@@ -47,31 +47,59 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
     """Create various visualizations for the data."""
     figures = {}
     
-    # OEE Distribution
-    figures['oee_dist'] = px.histogram(
-        df, x='OEE_mean',
-        title='Distribution of Average OEE',
-        labels={'OEE_mean': 'Average OEE (%)'},
-        nbins=20
+    # New: Trend Line - OEE vs Total Production (Replaces OEE Distribution)
+    figures['trend_line'] = px.strip(
+        df.head(15),
+        x='Operator',  # Categorical variable
+        y='OEE_mean',
+        title='Trend Line: OEE by top- 15 Operator',
+        labels={
+            'Operator': 'Operator',
+            'OEE_mean': 'Average OEE (%)'
+        }
     )
-    
-    # New: Average OEE vs Top 10 Combinations (Grouped Bar Chart)
+
     figures['avg_oee_top10'] = px.bar(
-        df.head(20),
+        df.head(15),
         x='Machine Name',
         y='OEE_mean',
-        color='Operator',  # Group by Operator
+        color='Operator',
+        barmode='group',
         hover_data=['Mold Name', 'Total Production_sum'],
         title='Average OEE vs Top 10 Combinations',
         labels={
             'OEE_mean': 'Average OEE (%)',
             'Machine Name': 'Machine',
             'Operator': 'Operator'
-        },
-        barmode="group"  # Set to grouped bar mode
+        }
     )
-
-
+    
+    # Update layout for thicker bars and better spacing
+    figures['avg_oee_top10'].update_layout(
+        yaxis_title="OEE (%)",
+        xaxis_title="Machine",
+        bargap=0.01,  # Minimal gap between bars in a group
+        bargroupgap=0.5,  # Gap between bar groups
+        yaxis=dict(
+            gridwidth=1,
+            zeroline=False
+        ),
+        xaxis=dict(
+            zeroline=False
+        ),
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    # Update bar width
+    figures['avg_oee_top10'].update_traces(width=0.2)
+    
     
     return figures
 
@@ -157,7 +185,7 @@ def main():
         figures = create_visualizations(filtered_df)
         col1, col2 = st.columns(2)
         with col1:
-            st.plotly_chart(figures['oee_dist'], use_container_width=True)
+            st.plotly_chart(figures['trend_line'], use_container_width=True)
         with col2:
             st.plotly_chart(figures['avg_oee_top10'], use_container_width=True)
         

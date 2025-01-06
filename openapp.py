@@ -211,9 +211,14 @@ def main():
         else:
             # Top combinations analysis
             top_combinations = df_combinations.head(5)
-            analysis_prompt = """Analyze the top 5 performing combinations of machine, mold, and operator. 
-            Explain why these combinations might be performing well, considering their OEE, quality rates, 
-            and production volumes. Provide specific insights and recommendations."""
+            analysis_prompt = """
+        Analyze the performance of all machine-mold-operator combinations in the dataset. 
+        Provide:
+        1. Key overall insights on the dataset, focusing on OEE, quality rates, and production volumes.
+        2. Patterns or trends observed in the data across machines, molds, and operators.
+        3. Suggestions to improve underperforming combinations based on the insights.
+        4. Recommendations to enhance overall production efficiency and quality.
+        """
             
             with st.spinner("Generating analysis..."):
                 analysis = get_openai_analysis(top_combinations, analysis_prompt)

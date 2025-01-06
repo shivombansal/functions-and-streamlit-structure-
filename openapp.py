@@ -55,20 +55,23 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
         nbins=20
     )
     
-    # Top Performers Bubble Chart
-    figures['top_performers'] = px.scatter(
-        df.head(10),
-        x='Quality_Rate', y='OEE_mean',
-        size='Total Production_sum',
-        color='Machine Name',
-        hover_data=['Mold Name', 'Operator'],
-        title='Top 10 Combinations: OEE vs Quality Rate',
+    # New: Average OEE vs Top 10 Combinations (Grouped Bar Chart)
+    figures['avg_oee_top10'] = px.bar(
+        df.head(20),
+        x='Machine Name',
+        y='OEE_mean',
+        color='Operator',  # Group by Operator
+        hover_data=['Mold Name', 'Total Production_sum'],
+        title='Average OEE vs Top 10 Combinations',
         labels={
-            'Quality_Rate': 'Quality Rate (%)',
             'OEE_mean': 'Average OEE (%)',
-            'Total Production_sum': 'Total Production'
-        }
+            'Machine Name': 'Machine',
+            'Operator': 'Operator'
+        },
+        barmode="group"  # Set to grouped bar mode
     )
+
+
     
     return figures
 
@@ -123,7 +126,7 @@ def main():
     df_combinations = analyze_production_data(data)
     
     # Create tabs for different sections
-    tab1, tab2, tab3 = st.tabs(["Dashboard", "AI Analysis", "Query Assistant"])
+    tab1, tab2 = st.tabs(["Dashboard", "Ask Plastech AI"])
     
     # Tab 1: Dashboard
     with tab1:
@@ -156,7 +159,7 @@ def main():
         with col1:
             st.plotly_chart(figures['oee_dist'], use_container_width=True)
         with col2:
-            st.plotly_chart(figures['top_performers'], use_container_width=True)
+            st.plotly_chart(figures['avg_oee_top10'], use_container_width=True)
         
         # Display metrics and table
         st.markdown("### Summary Statistics")
@@ -190,14 +193,12 @@ def main():
             use_container_width=True
         )
     
-    # Tab 2: AI Analysis
-    with tab2:
-        st.markdown("### AI-Powered Analysis")
+        st.markdown("### Plastech AI Analysis")
         if not openai_api_key:
             st.warning("Please enter your OpenAI API key in the sidebar to enable AI analysis.")
         else:
             # Top combinations analysis
-            top_combinations = df_combinations
+            top_combinations = filtered_df
             analysis_prompt = """
         Analyze the performance of all machine-mold-operator combinations in the dataset. 
         Provide:
@@ -212,8 +213,8 @@ def main():
                 st.markdown(analysis)
     
     # Tab 3: Query Assistant
-    with tab3:
-        st.markdown("### Query Assistant")
+    with tab2:
+        st.markdown("### Ask Plastech AI")
         if not openai_api_key:
             st.warning("Please enter your OpenAI API key in the sidebar to enable the query assistant.")
         else:

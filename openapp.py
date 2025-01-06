@@ -1,45 +1,35 @@
 import streamlit as st
+import streamlit as st
 import pandas as pd
-import numpy as np
-from openai import OpenAI
 import plotly.express as px
 import plotly.graph_objects as go
-from typing import Dict, List
-from dotenv import load_dotenv
+from typing import Dict
+from openai import OpenAI
 import os
 
-# Load environment variables from .env file
-load_dotenv()
-
 # Initialize the OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client = OpenAI(
+    api_key=os.getenv('OPENAI_API_KEY'),
+    base_url="https://api.openai.com/v1"
+)
 
 def get_openai_analysis(data: pd.DataFrame, prompt: str) -> str:
-    """Get analysis from OpenAI based on the data and prompt."""
-    if not client.api_key:
+    if not os.getenv('OPENAI_API_KEY'):
         return "OpenAI API key not configured. Please check your .env file."
     
     try:
         data_str = data.to_string()
-
-        # Create the ChatCompletion request
         completion = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",
             messages=[
                 {"role": "system", "content": """You are an expert manufacturing analyst. 
-                Analyze the production data and provide insights in a clear, professional manner. 
-                Focus on OEE (Overall Equipment Effectiveness), quality rates, and production metrics.
-                When explaining combinations, consider the relationships between machines, molds, and operators."""},
+                Analyze the production data and provide insights in a clear, professional manner."""},
                 {"role": "user", "content": f"{prompt}\n\nData:\n{data_str}"}
             ],
             temperature=0.7,
             max_tokens=500
         )
-
-        # Access the generated response
-        response_message = completion.choices[0].message.content
-        return response_message
-    
+        return completion.choices[0].message.content
     except Exception as e:
         return f"Error getting OpenAI analysis: {str(e)}"
 
@@ -140,14 +130,18 @@ def main():
     # Get OpenAI API key from .env or Streamlit input
     openai_api_key = os.getenv('OPENAI_API_KEY')
 
-    # Main title
-    st.title("Enhanced OEE Analysis Dashboard")
-    
-    # Load and analyze data
+
+    # Update file path for Streamlit deployment
     try:
-        data = pd.read_csv(r"C:\Users\Shivo\Desktop\RA BIZ TEK\Plastech\year_report.csv")
-    except FileNotFoundError:
-        st.error("Data file not found. Please check the file path.")
+        # Use st.file_uploader instead of hard-coded path
+        uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
+        if uploaded_file is not None:
+            data = pd.read_csv(uploaded_file)
+        else:
+            st.warning("Please upload a CSV file")
+            return
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
         return
 
     # Perform production data analysis

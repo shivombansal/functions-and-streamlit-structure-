@@ -109,18 +109,6 @@ def main():
     # Get OpenAI API key from .env or Streamlit input
     openai_api_key = os.getenv('OPENAI_API_KEY')
 
-    with st.sidebar:
-        st.title("Configuration")
-        
-        # Check for API key in .env
-        if not openai_api_key:
-            st.warning("OpenAI API key not found in .env file.")
-            openai_api_key = st.text_input("Enter OpenAI API Key", type="password")
-            if openai_api_key:
-                st.success("API key set successfully.")
-        else:
-            st.success("OpenAI API key loaded from .env file.")
-
     # Main title
     st.title("Enhanced OEE Analysis Dashboard")
     
@@ -189,7 +177,6 @@ def main():
             'Mold Name': 'Mold',
             'Operator': 'Operator',
             'OEE_mean': 'Avg OEE (%)',
-            'OEE_std': 'OEE Std Dev',
             'OEE_count': 'Number of Runs',
             'Good Part_sum': 'Total Good Parts',
             'Bad Part (nos.)_sum': 'Total Bad Parts',
@@ -210,7 +197,7 @@ def main():
             st.warning("Please enter your OpenAI API key in the sidebar to enable AI analysis.")
         else:
             # Top combinations analysis
-            top_combinations = df_combinations.head(5)
+            top_combinations = df_combinations
             analysis_prompt = """
         Analyze the performance of all machine-mold-operator combinations in the dataset. 
         Provide:

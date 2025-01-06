@@ -1,21 +1,28 @@
 import streamlit as st
-import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict
 from openai import OpenAI
+import httpx
 import os
 
-# Initialize the OpenAI client
-client = OpenAI(
-    api_key=os.getenv('OPENAI_API_KEY'),
-    base_url="https://api.openai.com/v1"
-)
+def get_openai_client():
+    """Create and return an OpenAI client with explicit configuration."""
+    try:
+        client = OpenAI(
+            api_key=st.secrets["OPENAI_API_KEY"],
+            http_client=httpx.Client()
+        )
+        return client
+    except Exception as e:
+        st.error(f"Error initializing OpenAI client: {e}")
+        return None
 
 def get_openai_analysis(data: pd.DataFrame, prompt: str) -> str:
-    if not os.getenv('OPENAI_API_KEY'):
-        return "OpenAI API key not configured. Please check your .env file."
+    client = get_openai_client()
+    if not client:
+        return "OpenAI client initialization failed. Please check your configuration."
     
     try:
         data_str = data.to_string()
@@ -37,12 +44,12 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
     """Create various visualizations for the data."""
     figures = {}
     
-    # New: Trend Line - OEE vs Total Production (Replaces OEE Distribution)
+    # Trend Line - OEE vs Total Production
     figures['trend_line'] = px.strip(
         df.head(15),
-        x='Operator',  # Categorical variable
+        x='Operator',
         y='OEE_mean',
-        title='Trend Line: OEE by top- 15 Operator',
+        title='Trend Line: OEE by top-15 Operator',
         labels={
             'Operator': 'Operator',
             'OEE_mean': 'Average OEE (%)'
@@ -68,8 +75,8 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
     figures['avg_oee_top10'].update_layout(
         yaxis_title="OEE (%)",
         xaxis_title="Machine",
-        bargap=0.01,  # Minimal gap between bars in a group
-        bargroupgap=0.5,  # Gap between bar groups
+        bargap=0.01,
+        bargroupgap=0.5,
         yaxis=dict(
             gridwidth=1,
             zeroline=False
@@ -87,10 +94,7 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
         )
     )
     
-    # Update bar width
     figures['avg_oee_top10'].update_traces(width=0.2)
-    
-    
     return figures
 
 def analyze_production_data(data: pd.DataFrame) -> pd.DataFrame:
@@ -126,14 +130,9 @@ def analyze_production_data(data: pd.DataFrame) -> pd.DataFrame:
 def main():
     # Set up Streamlit page
     st.set_page_config(page_title="Enhanced OEE Analysis Dashboard", layout="wide")
-    
-    # Get OpenAI API key from .env or Streamlit input
-    openai_api_key = os.getenv('OPENAI_API_KEY')
-
 
     # Update file path for Streamlit deployment
     try:
-        # Use st.file_uploader instead of hard-coded path
         uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
         if uploaded_file is not None:
             data = pd.read_csv(uploaded_file)
@@ -216,53 +215,47 @@ def main():
         )
     
         st.markdown("### Plastech AI Analysis")
-        if not openai_api_key:
-            st.warning("Please enter your OpenAI API key in the sidebar to enable AI analysis.")
-        else:
-            # Top combinations analysis
-            top_combinations = filtered_df
-            analysis_prompt = """
-        Analyze the performance of all machine-mold-operator combinations in the dataset. 
-        Provide:
-        1. Key overall insights on the dataset, focusing on OEE, quality rates, and production volumes.
-        2. Patterns or trends observed in the data across machines, molds, and operators.
-        3. Suggestions to improve underperforming combinations based on the insights.
-        4. Recommendations to enhance overall production efficiency and quality.
-        """
-            
-            with st.spinner("Generating analysis..."):
-                analysis = get_openai_analysis(top_combinations, analysis_prompt)
-                st.markdown(analysis)
+        # Top combinations analysis
+        top_combinations = filtered_df
+        analysis_prompt = """
+    Analyze the performance of all machine-mold-operator combinations in the dataset. 
+    Provide:
+    1. Key overall insights on the dataset, focusing on OEE, quality rates, and production volumes.
+    2. Patterns or trends observed in the data across machines, molds, and operators.
+    3. Suggestions to improve underperforming combinations based on the insights.
+    4. Recommendations to enhance overall production efficiency and quality.
+    """
+        
+        with st.spinner("Generating analysis..."):
+            analysis = get_openai_analysis(top_combinations, analysis_prompt)
+            st.markdown(analysis)
     
-    # Tab 3: Query Assistant
+    # Tab 2: Query Assistant
     with tab2:
         st.markdown("### Ask Plastech AI")
-        if not openai_api_key:
-            st.warning("Please enter your OpenAI API key in the sidebar to enable the query assistant.")
-        else:
-            user_query = st.text_area("Ask a question about the production data:", 
-                                    height=100,
-                                    placeholder="Example: Which machine-mold combinations have the highest quality rates?")
-            
-            if st.button("Get Answer"):
-                with st.spinner("Analyzing..."):
-                    answer = get_openai_analysis(df_combinations, user_query)
-                    st.markdown("### Answer")
-                    st.markdown(answer)
-                    
-                    # Generate relevant visualization based on the query
-                    st.markdown("### Related Visualization")
-                    if "quality" in user_query.lower():
-                        fig = px.scatter(
-                            df_combinations.sort_values('Quality_Rate', ascending=False).head(10),
-                            x='Machine Name',
-                            y='Quality_Rate',
-                            size='Total Production_sum',
-                            color='OEE_mean',
-                            hover_data=['Mold Name', 'Operator'],
-                            title='Top 10 Combinations by Quality Rate'
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+        user_query = st.text_area("Ask a question about the production data:", 
+                                height=100,
+                                placeholder="Example: Which machine-mold combinations have the highest quality rates?")
+        
+        if st.button("Get Answer"):
+            with st.spinner("Analyzing..."):
+                answer = get_openai_analysis(df_combinations, user_query)
+                st.markdown("### Answer")
+                st.markdown(answer)
+                
+                # Generate relevant visualization based on the query
+                st.markdown("### Related Visualization")
+                if "quality" in user_query.lower():
+                    fig = px.scatter(
+                        df_combinations.sort_values('Quality_Rate', ascending=False).head(10),
+                        x='Machine Name',
+                        y='Quality_Rate',
+                        size='Total Production_sum',
+                        color='OEE_mean',
+                        hover_data=['Mold Name', 'Operator'],
+                        title='Top 10 Combinations by Quality Rate'
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
 
 if __name__ == "__main__":
     main()

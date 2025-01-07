@@ -41,7 +41,7 @@ def get_openai_analysis(data: pd.DataFrame, prompt: str) -> str:
                 {"role": "user", "content": f"{prompt}\n\nData:\n{data_str}"}
             ],
             temperature=0.7,
-            max_tokens=500
+            max_tokens=2500
         )
         return completion.choices[0].message.content
     except Exception as e:

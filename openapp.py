@@ -243,19 +243,6 @@ def main():
                 st.markdown("### Answer")
                 st.markdown(answer)
                 
-                # Generate relevant visualization based on the query
-                st.markdown("### Related Visualization")
-                if "quality" in user_query.lower():
-                    fig = px.scatter(
-                        df_combinations.sort_values('Quality_Rate', ascending=False).head(10),
-                        x='Machine Name',
-                        y='Quality_Rate',
-                        size='Total Production_sum',
-                        color='OEE_mean',
-                        hover_data=['Mold Name', 'Operator'],
-                        title='Top 10 Combinations by Quality Rate'
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
 
 if __name__ == "__main__":
     main()

@@ -27,7 +27,7 @@ def get_openai_analysis(data: pd.DataFrame, prompt: str) -> str:
     try:
         data_str = data.to_string()
         completion = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": """You are an expert manufacturing analyst. 
                 Analyze the production data and provide insights in a clear, professional manner."""},

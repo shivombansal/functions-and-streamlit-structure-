@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -195,6 +196,18 @@ def main():
             st.metric("Average Quality Rate", f"{filtered_df['Quality_Rate'].mean():.2f}%")
         
         # Display detailed table
+        st.markdown("### Summary Statistics")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Average OEE", f"{filtered_df['OEE_mean'].mean():.2f}%")
+        with col2:
+            st.metric("Best OEE", f"{filtered_df['OEE_mean'].max():.2f}%")
+        with col3:
+            st.metric("Total Combinations", len(filtered_df))
+        with col4:
+            st.metric("Average Quality Rate", f"{filtered_df['Quality_Rate'].mean():.2f}%")
+        
+        # Display detailed table
         st.markdown("### Detailed Analysis")
         display_columns = {
             'Machine Name': 'Machine',
@@ -215,20 +228,25 @@ def main():
         )
     
         st.markdown("### Plastech AI Analysis")
-        # Top combinations analysis
-        top_combinations = filtered_df
-        analysis_prompt = """
-    Analyze the performance of all machine-mold-operator combinations in the dataset. 
-    Provide:
-    1. Key overall insights on the dataset, focusing on OEE, quality rates, and production volumes.
-    2. Patterns or trends observed in the data across machines, molds, and operators.
-    3. Suggestions to improve underperforming combinations based on the insights.
-    4. Recommendations to enhance overall production efficiency and quality.
-    """
         
-        with st.spinner("Generating analysis..."):
-            analysis = get_openai_analysis(top_combinations, analysis_prompt)
-            st.markdown(analysis)
+        # Add button to generate AI analysis
+        if st.button("Generate AI Analysis", key="generate_analysis"):
+            # Top combinations analysis
+            top_combinations = filtered_df
+            analysis_prompt = """
+        Analyze the performance of all machine-mold-operator combinations in the dataset. 
+        Provide:
+        1. Key overall insights on the dataset, focusing on OEE, quality rates, and production volumes.
+        2. Patterns or trends observed in the data across machines, molds, and operators.
+        3. Suggestions to improve underperforming combinations based on the insights.
+        4. Recommendations to enhance overall production efficiency and quality.
+        """
+            
+            with st.spinner("Generating analysis..."):
+                analysis = get_openai_analysis(top_combinations, analysis_prompt)
+                st.markdown(analysis)
+        else:
+            st.info("Click the button above to generate AI analysis of the current data.")
     
     # Tab 2: Query Assistant
     with tab2:
@@ -242,6 +260,7 @@ def main():
                 answer = get_openai_analysis(df_combinations, user_query)
                 st.markdown("### Answer")
                 st.markdown(answer)
+
                 
 
 if __name__ == "__main__":

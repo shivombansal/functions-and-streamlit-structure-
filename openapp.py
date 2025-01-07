@@ -36,8 +36,7 @@ def get_openai_analysis(data: pd.DataFrame, prompt: str) -> str:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": """You are an expert manufacturing analyst. 
-                Analyze the production data and provide insights in a clear, professional manner."""},
+                {"role": "system", "content": """You are an expert manufacturing analyst. Analyze the production data and provide insights in a clear, professional manner. You will provide concise, easy to understand, and direct answers. Think step by step, and assume you're an excellent predictive model for factory operations. Assume your explanations and thinking patterns wherever needed."""},
                 {"role": "user", "content": f"{prompt}\n\nData:\n{data_str}"}
             ],
             temperature=0.7,

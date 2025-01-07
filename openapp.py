@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -7,12 +6,19 @@ from typing import Dict
 from openai import OpenAI
 import httpx
 import os
+import time
+from portkey_ai import PORTKEY_GATEWAY_URL, createHeaders
 
 def get_openai_client():
-    """Create and return an OpenAI client with explicit configuration."""
+    """Create and return an OpenAI client configured with Portkey gateway."""
     try:
         client = OpenAI(
             api_key=st.secrets["OPENAI_API_KEY"],
+            base_url=PORTKEY_GATEWAY_URL,
+            default_headers=createHeaders(
+                provider="openai",
+                api_key=st.secrets["PORTKEY_API_KEY"]
+            ),
             http_client=httpx.Client()
         )
         return client
@@ -20,13 +26,16 @@ def get_openai_client():
         st.error(f"Error initializing OpenAI client: {e}")
         return None
 
-def get_openai_analysis(data: pd.DataFrame, prompt: str) -> str:
+def get_openai_analysis(data: pd.DataFrame, prompt: str) -> tuple:
+    """Get OpenAI analysis with cost and latency tracking."""
     client = get_openai_client()
     if not client:
-        return "OpenAI client initialization failed. Please check your configuration."
+        return "OpenAI client initialization failed. Please check your configuration.", None, None
     
     try:
         data_str = data.to_string()
+        start_time = time.time()
+        
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -37,9 +46,16 @@ def get_openai_analysis(data: pd.DataFrame, prompt: str) -> str:
             temperature=0.7,
             max_tokens=500
         )
-        return completion.choices[0].message.content
+        
+        # Calculate metrics
+        metrics = completion.usage
+        estimated_cost = (metrics.prompt_tokens * 0.01 + metrics.completion_tokens * 0.03) / 1000  # Adjust rates based on your model
+        latency = time.time() - start_time
+        
+        return completion.choices[0].message.content, estimated_cost, latency
     except Exception as e:
-        return f"Error getting OpenAI analysis: {str(e)}"
+        return f"Error getting OpenAI analysis: {str(e)}", None, None
+
 
 def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
     """Create various visualizations for the data."""
@@ -229,24 +245,29 @@ def main():
     
         st.markdown("### Plastech AI Analysis")
         
-        # Add button to generate AI analysis
+        cost_metric, latency_metric = st.columns(2)
+        
         if st.button("Generate AI Analysis", key="generate_analysis"):
-            # Top combinations analysis
             top_combinations = filtered_df
             analysis_prompt = """
-        Analyze the performance of all machine-mold-operator combinations in the dataset. 
-        Provide:
-        1. Key overall insights on the dataset, focusing on OEE, quality rates, and production volumes.
-        2. Patterns or trends observed in the data across machines, molds, and operators.
-        3. Suggestions to improve underperforming combinations based on the insights.
-        4. Recommendations to enhance overall production efficiency and quality.
-        """
+            Analyze the performance of all machine-mold-operator combinations in the dataset. 
+            Provide:
+            1. Key overall insights on the dataset, focusing on OEE, quality rates, and production volumes.
+            2. Patterns or trends observed in the data across machines, molds, and operators.
+            3. Suggestions to improve underperforming combinations based on the insights.
+            4. Recommendations to enhance overall production efficiency and quality.
+            """
             
             with st.spinner("Generating analysis..."):
-                analysis = get_openai_analysis(top_combinations, analysis_prompt)
+                analysis, cost, latency = get_openai_analysis(top_combinations, analysis_prompt)
                 st.markdown(analysis)
-        else:
-            st.info("Click the button above to generate AI analysis of the current data.")
+                
+                # Display cost and latency metrics
+                if cost and latency:
+                    with cost_metric:
+                        st.metric("Estimated Cost", f"${cost:.4f}")
+                    with latency_metric:
+                        st.metric("Response Time", f"{latency:.2f}s")
     
     # Tab 2: Query Assistant
     with tab2:
@@ -255,11 +276,21 @@ def main():
                                 height=100,
                                 placeholder="Example: Which machine-mold combinations have the highest quality rates?")
         
+        # Add metrics containers for cost and latency
+        query_cost_metric, query_latency_metric = st.columns(2)
+        
         if st.button("Get Answer"):
             with st.spinner("Analyzing..."):
-                answer = get_openai_analysis(df_combinations, user_query)
+                answer, cost, latency = get_openai_analysis(df_combinations, user_query)
                 st.markdown("### Answer")
                 st.markdown(answer)
+                
+                # Display cost and latency metrics
+                if cost and latency:
+                    with query_cost_metric:
+                        st.metric("Estimated Cost", f"${cost:.4f}")
+                    with query_latency_metric:
+                        st.metric("Response Time", f"{latency:.2f}s")
 
                 
 

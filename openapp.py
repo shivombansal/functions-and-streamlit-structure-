@@ -202,17 +202,6 @@ def main():
         with col4:
             st.metric("Average Quality Rate", f"{filtered_df['Quality_Rate'].mean():.2f}%")
         
-        # Display detailed table
-        st.markdown("### Summary Statistics")
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Average OEE", f"{filtered_df['OEE_mean'].mean():.2f}%")
-        with col2:
-            st.metric("Best OEE", f"{filtered_df['OEE_mean'].max():.2f}%")
-        with col3:
-            st.metric("Total Combinations", len(filtered_df))
-        with col4:
-            st.metric("Average Quality Rate", f"{filtered_df['Quality_Rate'].mean():.2f}%")
         
         # Display detailed table
         st.markdown("### Detailed Analysis")

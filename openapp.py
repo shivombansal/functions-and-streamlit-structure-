@@ -58,7 +58,7 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
         df.head(15),
         x='Operator',
         y='OEE_mean',
-        title='Trend Line: OEE by top-15 Operator',
+        title='Trend Line: OEE by top Operators',
         labels={
             'Operator': 'Operator',
             'OEE_mean': 'Average OEE (%)'
@@ -72,7 +72,7 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
         color='Operator',
         barmode='group',
         hover_data=['Mold Name', 'Total Production_sum'],
-        title='Average OEE vs Top 15 Combinations',
+        title='Average OEE vs Top Combinations',
         labels={
             'OEE_mean': 'Average OEE (%)',
             'Machine Name': 'Machine',

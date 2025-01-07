@@ -245,7 +245,6 @@ def main():
     
         st.markdown("### Plastech AI Analysis")
         
-        cost_metric, latency_metric = st.columns(2)
         
         if st.button("Generate AI Analysis", key="generate_analysis"):
             top_combinations = filtered_df
@@ -259,15 +258,9 @@ def main():
             """
             
             with st.spinner("Generating analysis..."):
-                analysis, cost, latency = get_openai_analysis(top_combinations, analysis_prompt)
+                analysis = get_openai_analysis(top_combinations, analysis_prompt)
                 st.markdown(analysis)
                 
-                # Display cost and latency metrics
-                if cost and latency:
-                    with cost_metric:
-                        st.metric("Estimated Cost", f"${cost:.4f}")
-                    with latency_metric:
-                        st.metric("Response Time", f"{latency:.2f}s")
     
     # Tab 2: Query Assistant
     with tab2:
@@ -276,8 +269,6 @@ def main():
                                 height=100,
                                 placeholder="Example: Which machine-mold combinations have the highest quality rates?")
         
-        # Add metrics containers for cost and latency
-        query_cost_metric, query_latency_metric = st.columns(2)
         
         if st.button("Get Answer"):
             with st.spinner("Analyzing..."):
@@ -285,12 +276,6 @@ def main():
                 st.markdown("### Answer")
                 st.markdown(answer)
                 
-                # Display cost and latency metrics
-                if cost and latency:
-                    with query_cost_metric:
-                        st.metric("Estimated Cost", f"${cost:.4f}")
-                    with query_latency_metric:
-                        st.metric("Response Time", f"{latency:.2f}s")
 
                 
 

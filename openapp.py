@@ -63,7 +63,7 @@ def create_visualizations(df: pd.DataFrame) -> Dict[str, go.Figure]:
         color='Operator',
         barmode='group',
         hover_data=['Mold Name', 'Total Production_sum'],
-        title='Average OEE vs Top 10 Combinations',
+        title='Average OEE vs Top 15 Combinations',
         labels={
             'OEE_mean': 'Average OEE (%)',
             'Machine Name': 'Machine',
